@@ -13,14 +13,14 @@ import re
 
 """
 1.We are making some constraints like:
-A.Model Path
+A.Model Path(BiGRU)
 B.Tokenizer Path
 C.Max Sequence Length
 D.Emotion labels
 E.Emotion emojis
 """
 
-#A. Model Path
+#A. Model Path (BiGRU)
 model_path = 'Artifacts/BiGRU_Model.keras'
 
 #B. Tokenizer Path

@@ -377,6 +377,7 @@
 
   // Render Full Result
   const renderResult = (data, recordHistory = true) => {
+    clearError();
     currentReadingData = data;
     const topEmotion = data.predicted_emotion;
     const meta = EMOTIONS[topEmotion] ?? EMOTIONS.joy;
