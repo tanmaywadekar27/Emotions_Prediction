@@ -13,14 +13,14 @@ import re
 
 """
 1.We are making some constraints like:
-A.Model Path(BiGRU)
+A.Model Path
 B.Tokenizer Path
 C.Max Sequence Length
 D.Emotion labels
 E.Emotion emojis
 """
 
-#A. Model Path (BiGRU)
+#A. Model Path
 model_path = 'Artifacts/BiGRU_Model.keras'
 
 #B. Tokenizer Path
@@ -96,19 +96,19 @@ Model does to work : 1.Run before server starts, 2.Run after server closes.
 
 Load the model and tokenizer once the server starts up.
 '''
-dl_model = {}    #{1.BiGRU  2.Tokenizer}-->  True   { }--> False
+dl_model = {}
 
 @asynccontextmanager 
 async def lifespan(app: FastAPI):
     print('Loading the model and tokenizer.....')
-    dl_model["BiGRU"] = load_model(model_path)    #BiGRU model
+    dl_model["model"] = load_model(model_path)
     with open(tokenizer_path, 'rb') as file:
-        dl_model['Tokenizer'] = pickle.load(file)  
-    print('Model are loaded successfully...')
+        dl_model['tokenizer'] = pickle.load(file)  
+    print('Model and tokenizer loaded successfully...')
 
-    yield#Paude, model is loaded and server is running and at this point model wait for request.
+    yield
 
-    dl_model.clear()  #Once server off remove model from memory
+    dl_model.clear()
 
 '''
 5.Mount the files to the FastAPI app
@@ -139,7 +139,8 @@ C.Predict Emotion Endpoint ('/predict')
 '''
 
 #A. Server UI at homepage("/")
-@app.get('/',include_in_schema=False)
+@app.get('/', include_in_schema=False)
+@app.get('/index.html', include_in_schema=False)
 def server_ui():
     return FileResponse('static/index.html')
 
@@ -152,46 +153,48 @@ def health_check():
 @app.post('/predict', response_model=PredictionResponse)
 def predict_emotion(text_input: TextInput):
    
-    #1.Cleans the imput sentences.
+    #1.Cleans the input sentences.
     #2.Convert the words into numeric using tokenizer.
     #3.Pad the sequences to ensure uniform length.
-    #4.Run prediction using the BiGRU model.
+    #4.Run prediction using the loaded model.
     #5.Return the top emotion and full probability breakdown.
 
+    model = dl_model.get('model')
+    tokenizer = dl_model.get('tokenizer')
 
-   BiGRU_model = dl_model.get('BiGRU')
-   tokenizer_model = dl_model.get('Tokenizer')
+    if model is None or tokenizer is None:
+        raise HTTPException(status_code=503, detail='Model is not loaded yet. Please try again later.')
 
-   if BiGRU_model is None or tokenizer_model is None:
-       raise HTTPException(status_code=503, detail='Model is not loaded yet. Please try again later.')
+    #1.
+    cleaned_text = preprocess_text(text_input.text)
 
-   #1.
-   cleaned_text = preprocess_text(text_input.text)
+    #2. and 3.
+    tokenized_text = tokenizer.texts_to_sequences([cleaned_text])
+    padded_sequence = pad_sequences(
+        tokenized_text,
+        maxlen=max_sequence_length,
+        padding='post',
+        truncating='post'
+    )
+    #4
+    probabilities = model.predict(padded_sequence, verbose=0)[0]
 
-   #2. and 3.
-   tokenized_text = tokenizer_model.texts_to_sequences([cleaned_text])
-   print(cleaned_text)
-   padded_sequence = pad_sequences(
-       tokenized_text,
-       maxlen=max_sequence_length,
-       padding='post',
-       truncating='post'
-   )
-   #4
-   probabilities = BiGRU_model.predict(padded_sequence)[0]
+    top_emotion_index = int(np.argmax(probabilities))
+    all_probabilities = {
+        label: float(prob) for prob, label in zip(probabilities, emotion_labels)
+    }
 
-   top_emotion_index = int(np.argmax(probabilities))
-   all_probabilities = {
-       label: float(prob) for prob, label in zip(probabilities,emotion_labels)
-   }
+    return PredictionResponse(
+        text=text_input.text,
+        predicted_emotion=emotion_labels[top_emotion_index],
+        confidence=float(probabilities[top_emotion_index]),
+        all_probabilites=all_probabilities
+    )
 
-   return PredictionResponse(
-       text = text_input.text,
-       predicted_emotion = emotion_labels[top_emotion_index],
-       confidence = float(probabilities[top_emotion_index]),
-       all_probabilites = all_probabilities
 
-   )
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
 
 
 

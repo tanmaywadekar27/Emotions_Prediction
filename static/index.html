@@ -1,11 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reader — What Your Words Are Feeling</title>
+  <meta name="description" content="Emotion Intelligence — Listen to the emotions underneath your words.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>App is working</h1>
+
+  <!-- Film grain layer for organic tactile texture -->
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- Dynamic ambient emotion backlight -->
+  <div class="ambient-glow" id="ambientGlow" aria-hidden="true"></div>
+
+  <main class="page">
+
+    <!-- Header & Navigation Bar -->
+    <header class="site-header">
+      <div class="brand">
+        <svg class="brand-glyph" viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+          <path d="M16 3 C 16 12, 25 12, 29 16 C 25 20, 16 20, 16 29 C 16 20, 7 20, 3 16 C 7 12, 16 12, 16 3 Z" fill="currentColor"/>
+        </svg>
+        <span class="brand-name">Reader</span>
+        <span class="brand-tag">Deep Emotion AI</span>
+      </div>
+
+      <div class="header-actions">
+        <div class="model-status" id="modelStatus" title="Status of Emotion AI Engine">
+          <span class="status-indicator"></span>
+          <span class="status-label" id="statusLabel">Checking engine…</span>
+        </div>
+        <button id="historyToggleBtn" class="history-toggle-btn" type="button" aria-label="View past readings">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="history-btn-text">Journal</span>
+          <span class="history-count-badge" id="historyCountBadge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Hero Introduction -->
+    <section class="hero">
+      <div class="hero-badge">Deep Emotion Intelligence</div>
+      <h1>Tell it something true,<br>and it will tell you what it heard.</h1>
+      <p class="sub">
+        A sentence carries more than its literal words. Write a thought, an unsent letter, a diary line, or a confession — Reader will listen for the emotional undertone.
+      </p>
+
+      <!-- Sample Prompt Chips -->
+      <div class="sample-whispers">
+        <span class="sample-title">Try a whisper:</span>
+        <div class="sample-chips">
+          <button type="button" class="sample-chip" data-sample="I just found out I got the dream opportunity I worked so hard for!">
+            <span class="chip-emoji">😊</span> Joy
+          </button>
+          <button type="button" class="sample-chip" data-sample="No matter how messy life gets, having you close makes everything peaceful.">
+            <span class="chip-emoji">❤️</span> Love
+          </button>
+          <button type="button" class="sample-chip" data-sample="I keep walking past your favorite spot hoping you'll suddenly be standing there.">
+            <span class="chip-emoji">😢</span> Sadness
+          </button>
+          <button type="button" class="sample-chip" data-sample="I am completely exhausted with being lied to and treated like my time means nothing.">
+            <span class="chip-emoji">😡</span> Anger
+          </button>
+          <button type="button" class="sample-chip" data-sample="The hallway went pitch black and I could hear slow footsteps right behind me.">
+            <span class="chip-emoji">😨</span> Fear
+          </button>
+          <button type="button" class="sample-chip" data-sample="I opened the dusty box in the attic and couldn't believe my eyes!">
+            <span class="chip-emoji">😲</span> Surprise
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- The Paper (Composer Card) -->
+    <section class="paper" id="paper">
+      <div class="paper-top-bar">
+        <div class="paper-ruling-lines" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="paper-tools">
+          <button type="button" id="clearBtn" class="paper-tool-btn" title="Clear text" aria-label="Clear text" hidden>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            <span>Clear</span>
+          </button>
+          <button type="button" id="voiceBtn" class="paper-tool-btn" title="Speak to dictate" aria-label="Dictate thought" hidden>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+            <span id="voiceBtnLabel">Voice</span>
+          </button>
+        </div>
+      </div>
+
+      <label for="entry" class="visually-hidden">Your sentence to analyze</label>
+      <textarea
+        id="entry"
+        placeholder="Type a sentence, memory, or feeling here…"
+        maxlength="2000"
+        rows="4"
+        autofocus
+      ></textarea>
+
+      <div class="paper-foot">
+        <div class="paper-metrics">
+          <span id="wordMetric" class="metric-item">0 words</span>
+          <span class="metric-sep">·</span>
+          <span class="metric-item"><span id="count">0</span> / 2000 chars</span>
+        </div>
+
+        <div class="paper-actions">
+          <span class="keyboard-hint" title="Keyboard shortcut">
+            <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+          </span>
+          <button id="submit" class="submit-btn" type="button">
+            <span class="submit-label">Read this</span>
+            <svg class="submit-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Banner -->
+    <div class="error-banner" id="error" hidden role="alert">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span id="errorMessage">Type something first — even a sentence is enough.</span>
+    </div>
+
+    <!-- The Reading (Results View) -->
+    <section class="reading" id="reading" hidden>
+
+      <!-- Main Result Card -->
+      <div class="result-hero-card">
+        <div class="result-hero-header">
+          <div class="reading-emoji-wrapper">
+            <span class="reading-emoji" id="resultEmoji">😊</span>
+            <span class="emoji-glow" aria-hidden="true"></span>
+          </div>
+
+          <div class="reading-text">
+            <div class="reading-tagline">Dominant Resonance</div>
+            <h2 class="reading-emotion" id="resultEmotion">joy</h2>
+            <p class="secondary-tone" id="secondaryTone" hidden>
+              Subtle undertone: <strong id="secondaryName">love</strong> (<span id="secondaryPct">12%</span>)
+            </p>
+          </div>
+
+          <div class="confidence-badge-wrapper">
+            <span class="reading-confidence" id="resultConfidence">92%</span>
+            <span class="confidence-caption">Certainty</span>
+          </div>
+        </div>
+
+        <div class="reading-quote-box">
+          <svg class="quote-mark" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2H4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h3c0 3.25-1.75 5-4 6v2zm13 0c3 0 7-1 7-8V5c0-1.25-.75-2-2-2h-4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h3c0 3.25-1.75 5-4 6v2z" fill="currentColor"/>
+          </svg>
+          <p class="reading-quote" id="resultQuote"></p>
+        </div>
+      </div>
+
+      <!-- Spectrum Analysis Section -->
+      <div class="spectrum-section">
+        <div class="section-header">
+          <h3 class="section-title">Emotional Spectrum Breakdown</h3>
+          <span class="section-subtitle">Full emotion classification distribution</span>
+        </div>
+
+        <!-- Continuous Gradient Ribbon -->
+        <div class="spectrum" id="spectrum" aria-label="Full emotional distribution bar"></div>
+
+        <!-- Detailed Ranked Progress Bars -->
+        <div class="spectrum-breakdown" id="spectrumBreakdown"></div>
+      </div>
+
+      <!-- Result Action Bar -->
+      <div class="reading-actions">
+        <button type="button" id="copyBtn" class="action-btn" title="Copy formatted reading to clipboard">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Copy Reading</span>
+        </button>
+        <button type="button" id="resetBtn" class="action-btn secondary" title="Write a new sentence">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <span>New Thought</span>
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>Powered by Deep Learning & Natural Language Processing</p>
+    </footer>
+
+  </main>
+
+  <!-- Journal / Recent Readings Drawer -->
+  <div class="history-drawer-backdrop" id="historyBackdrop" aria-hidden="true"></div>
+  <aside class="history-drawer" id="historyDrawer" aria-label="Reading Journal">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <h3>Your Reading Journal</h3>
+      </div>
+      <button type="button" id="closeDrawerBtn" class="close-drawer-btn" aria-label="Close journal">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="drawer-body" id="drawerBody">
+      <div class="empty-history" id="emptyHistory">
+        <span class="empty-emoji">📖</span>
+        <p>No past readings yet. Analyze a sentence and it will be remembered here.</p>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <div class="drawer-footer" id="drawerFooter">
+      <button type="button" id="clearHistoryBtn" class="clear-history-btn">Clear All Journal Entries</button>
+    </div>
+  </aside>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/static/app.js"></script>
 </body>
 </html>
